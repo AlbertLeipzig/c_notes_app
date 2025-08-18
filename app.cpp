@@ -4,8 +4,6 @@
 #include <string>
 
 /*
-- Db
-
 - Controllers:
 
     - readSingleNote
@@ -13,11 +11,13 @@
     - createNote
     - updateNote
     - deleteNote
+*/
 
-- Display Information
-
-- User Interaction
-
+/*
+- Creating a Db (.json)
+- Linking the db with the project
+- Complete and refine the controllers
+- Implement some User Interaction
 */
 
 /* CONTROLLERS */
