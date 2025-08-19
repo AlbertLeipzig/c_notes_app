@@ -13,11 +13,12 @@ struct Note
     std::string text;
 };
 
-std::vector<Note>
-    notes{
-        {"erty", "Hello There"}, {"sdfg", "How Are you doing?"}};
+inline void to_json(json &j, const Note &n)
+{
+    j = json{{"id", n.id}, {"text", n.text}};
+}
 
-void from_json(const json &j, Note &n)
+inline void from_json(const json &j, Note &n)
 {
     j.at("id").get_to(n.id);
     j.at("text").get_to(n.text);
@@ -34,48 +35,47 @@ void readAllNotes()
     if (!file.is_open())
     {
         std::cerr << "Failed to open notesDb.json\n";
+        return;
     }
 
     json j;
-
     file >> j;
 
     std::vector<Note> notes = j.get<std::vector<Note>>();
 
     for (auto &note : notes)
     {
-        std::cout << note.text << std::endl;
+        std::cout << note.id << " : " << note.text << std::endl;
     }
 }
 
 /* readSingleNote */
 
-void readSingleNote(std::string id)
+void readSingleNote(const std::string &id)
 {
-
     std::ifstream file("notesDb.json");
 
     if (!file.is_open())
     {
         std::cerr << "Failed to open notesDb.json\n";
+        return;
     }
 
     json j;
-
     file >> j;
 
     std::vector<Note> notes = j.get<std::vector<Note>>();
 
-    auto it = std::find_if(std::begin(notes), std::end(notes), [&id](const Note &note)
+    auto it = std::find_if(notes.begin(), notes.end(), [&](const Note &note)
                            { return note.id == id; });
 
-    if (it == std::end(notes))
+    if (it == notes.end())
     {
         std::cerr << "No Note found\n";
     }
     else
     {
-        std::cout << it->text << std::endl;
+        std::cout << it->id << " : " << it->text << std::endl;
         /* std::cout << (*it).text << std::endl; */
     }
 }
@@ -85,24 +85,26 @@ void readSingleNote(std::string id)
 void createNote(const Note &newNote, const std::string &filename)
 {
     std::ifstream inFile(filename);
-    std::string json((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+    json j;
+
+    if (inFile.is_open())
+    {
+        inFile >> j; // read existing JSON
+    }
     inFile.close();
 
-    size_t lastBrace = json.find_last_of('}');
-
-    if (lastBrace == std::string::npos)
+    // Make sure file contained an array
+    if (!j.is_array())
     {
-        std::cerr << "Invalid JSON format. \n";
-        return;
+        j = json::array();
     }
 
-    std::string noteString = ",\n  {\"id\":\"" + newNote.id +
-                             "\",\"text\":\"" + newNote.text + "\"}";
+    // Push the new note
+    j.push_back({{"id", newNote.id}, {"text", newNote.text}});
 
-    json.insert(lastBrace + 1, noteString);
-
+    // Save back
     std::ofstream outFile(filename);
-    outFile << json;
+    outFile << j.dump(2); // pretty print
     outFile.close();
 }
 
